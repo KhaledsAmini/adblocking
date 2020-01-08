@@ -3,13 +3,17 @@ body {
 	color: #959595;
 	}
 	
-h1, h2, h3, h4, h5, h6 {
+h1, h2, h4, h5, h6 {
 	color: black;
+	}
+	p {
+		font-size: large;
+		color: #000;
 	}
 	
 .feature {
-	background-color: yellowgreen;
-	color: greenyellow;
+	background-color: lightgray;
+	color: black;
 	}
 	
 .article-intro {
