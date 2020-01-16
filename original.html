@@ -2,36 +2,24 @@
 
 <head>
     <meta charset="utf-8">
-    <script src="https://d3js.org/d3.v5.min.js"></script>
+  <script src="https://d3js.org/d3.v5.min.js"></script>
     <style>
-        body {
-            width: 1060px;
-        }
+        body{
+    width:1060px;
+}
+path {  stroke: #fff; }
+path:hover {  opacity:0.9; }
+.axis {  font: 10px sans-serif; }
+.legend tr{    border-bottom:1px solid grey; }
+.legend tr:first-child{    border-top:1px solid grey; }
 
-        path {
-            stroke: #fff;
-        }
-
-        path:hover {
-            opacity: 0.9;
-        }
-
-        .axis {
-            font: 10px sans-serif;
-        }
-
-        .axis path,
-        .axis line {
-            fill: none;
-            stroke: #000;
-            shape-rendering: crispEdges;
-        }
-
-        .x.axis path {
-            display: none;
-        }
-      	
-      	 .hidden {
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+      .hidden {
             display: none;
         }
           div.tooltip {
@@ -45,28 +33,42 @@
             font-size: 13px;
         }
 
-        .legend {
-            position: absolute;
-            display: block;
-            border-collapse: collapse;
-            border-spacing: 0px;
-        }
-
-        h3 {
+.x.axis path {  display: none; }
+      .legend{
+            margin-top: 50px;
+  	position: absolute;
+    margin-left: 645px;
+    display:block;
+    border-collapse: collapse;
+    border-spacing: 0px;
+}
+.legend td{
+    padding:4px 5px;
+    vertical-align:bottom;
+}
+.legendFreq, .legendPerc{
+  	font-size: 15px;
+    text-align:right;
+    width:50px;
+}
+      h3 {
             display: inline;
             margin: 10px 100px 10px 10px;
             font-family: 'Arial';
         }
+
     </style>
 </head>
-<div align="center" style="margin-top: 10px;">
-    <h3>Consommation de données en KB avec et sans AdBlocking</h3>
+<div  align="center" style="margin-top: 10px;">
+ <h3>Consommation de données en KB avec et sans AdBlocking</h3>
 
 </div>
-
 <body>
+  <div id='dashboard'>
+</div>
     <script>
-       var margin = {
+function dashboard(id, data){
+var margin = {
                 top: 20,
                 right: 20,
                 bottom: 30,
@@ -78,7 +80,7 @@
         var svg = d3.select('body').append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
-            g = svg.append("g").attr("transform", "translate(" + margin.left + "," + 0 + ")");
+            g = svg.append("g").attr("transform", "translate(" + margin.left + "," + 5 + ")");
 
         // set x scale
         var x = d3.scaleBand()
@@ -96,16 +98,12 @@
       
       var tooltip = d3.select('body').append('div')
             .attr('class', 'hidden tooltip');
-
-        // load the csv and create the chart
-        d3.csv("data1.csv").then( function (data) {
-          
-          var keys = data.columns.slice(1);
-          
-          data.forEach(function(d) {
-						d.total = d3.sum(keys, k => +d[k])
-						return d
-					})
+  
+    data.forEach(function(d){d.total=d.values.avecAd+d.values.sansAd;});
+  
+      // function to handle histogram.
+    function histoGram(fD){
+        var keys = ['avecAd','sansAd']
 
             data.sort(function (a, b) {
                 return b.total - a.total;
@@ -116,7 +114,7 @@
                 return d.name;
             }));
           
-           y.domain([0, d3.max(data, function(d) { return d.total; })]).nice();
+           y.domain([0, 40000]);
             
             z.domain(keys);
 
@@ -132,14 +130,8 @@
       .attr("y", function(d) { return y(d[1]); })
       .attr("height", function(d) { return y(d[0]) - y(d[1]); })
       .attr("width", x.bandwidth())
-.on("mousemove", function(d){
-            tooltip
-              .style("left", d3.event.pageX - 20 + "px")
-              .style("top", d3.event.pageY - 50 + "px")
-              .style("display", "inline-block")
-              .html(d[1] - d[0] + " Ko");
-        		})
-    				.on("mouseout", function(d){ tooltip.style("display", "none");});
+       .on("mouseover",mouseover)// mouseover is defined below.
+            .on("mouseout",mouseout);
             g.append("g")
                 .attr("class", "axis")
                 .attr("transform", "translate(0," + height + ")")
@@ -158,33 +150,104 @@
             .attr("font-weight", "bold")
             .attr("text-anchor", "start")
             .text("Ko");
+      
+      function mouseover(d){
+        tooltip
+              .style("left", d3.event.pageX - 20 + "px")
+              .style("top", d3.event.pageY - 50 + "px")
+              .style("display", "inline-block")
+              .html(d.data.categorie);
+        
+            var st = data.filter(function(s){ return s.name == d.data.name;})[0],
+                nD = d3.keys(st.values).map(function(s){ return {type:s, values:st.values[s]};});            
+            // call update functions of pie-chart and legend.    
+            leg.update(nD);
+        }
+        
+        function mouseout(d){    // utility function to be called on mouseout.
+          tooltip.style("display", "none")
+            leg.update(tF);
+        }
+        
+    }
+  function legend(lD){
+        var leg = {};
+            
+        // create table for legend.
+        var legend = d3.select(id).append("table").attr('class','legend')
+        
+        // create one row per segment.
+        var tr = legend.append("tbody").selectAll("tr").data(lD).enter().append("tr");
+            
+    		tr.append("td").append("svg").attr("width", '16').attr("height", '16').append("rect")
+            .attr("width", '16').attr("height", '16')
+			.attr("fill",function(d){ return z(d.type); });
+    
+        // create the second column for each segment.
+        tr.append("td").text(function(d){ if(d.type=="avecAd") return "avecAd"
+        else return "sansAd"})
 
-            var legend = g.append("g")
-                .attr("font-family", "sans-serif")
-                .attr("font-size", 10)
-                .attr("text-anchor", "end")
-                .selectAll("g")
-                .data(keys.slice().reverse())
-                .enter().append("g")
-                .attr("transform", function (d, i) {
-                    return "translate(0," + i * 20 + ")";
-                });
+        // create the third column for each segment.
+        tr.append("td").attr("class",'legendFreq')
+            .text(function(d){ return d3.format(",")(d.values) + "Kb";})
+        
 
-            legend.append("rect")
-                .attr("x", width - 19)
-                .attr("width", 19)
-                .attr("height", 19)
-                .attr("fill", z);
+        // create the fourth column for each segment.
+        tr.append("td").attr("class",'legendPerc')
+            .text(function(d){ return getLegend(d,lD) + "%";})
+        
 
-            legend.append("text")
-                .attr("x", width - 24)
-                .attr("y", 9.5)
-                .attr("dy", "0.32em")
-                .text(function (d) {
-                    return d;
-                });
-       
-        });
+        // Utility function to be used to update the legend.
+        leg.update = function(nD){
+            // update the data attached to the row elements.
+            var l = legend.select("tbody").selectAll("tr").data(nD);
 
+            l.select(".legendFreq")
+             .text(function(d){ return d3.format(",")(d.values) + "Kb";})
+            
+
+            // update the percentage column.
+            l.select(".legendPerc").text(function(d){ return getLegend(d,nD) + "%";})
+            
+        }
+        
+        function getLegend(d,aD){ // Utility function to compute percentage.
+            return (d.values*100/d3.sum(aD.map(function(v){ return v.values; }))).toFixed(2);
+        }
+
+        return leg;
+    }
+    
+    var tF = ['avecAd','sansAd'].map(function(d){ 
+        return {type:d, 
+                values: d3.sum(data.map(function(t){ return t.values[d];}))
+               }; 
+    });  
+
+    var hG = histoGram(data)
+        leg= legend(tF)
+}
     </script>
+  <script>
+ d3.json("data.json").then(function (data) {
+            var donnes = []
+            for (var i = 0; i < data["avec_ad"].length; i++) {
+                var obj = {
+                    name: data["avec_ad"][i].name,
+                  	avecAd: +data["avec_ad"][i].donnee_page_acceuil +
+                             +data["avec_ad"][i].donnee_2eme_page,
+                  	sansAd: +data["sans_ad"][i].donnee_page_acceuil + 
+                             +data["sans_ad"][i].donnee_2eme_page,
+                  	values: {"avecAd": +data["avec_ad"][i].donnee_page_acceuil +
+                             +data["avec_ad"][i].donnee_2eme_page,
+                             "sansAd": +data["sans_ad"][i].donnee_page_acceuil + 
+                             +data["sans_ad"][i].donnee_2eme_page},
+                  	categorie: data["avec_ad"][i].categorie
+                }
+                donnes.push(obj)
+            }
+
+dashboard('#dashboard',donnes);
+ })
+</script>
 </body>

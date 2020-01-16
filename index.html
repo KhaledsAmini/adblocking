@@ -77,11 +77,26 @@
            
             <h1 class="page-header"  align="left">
                 Consommation de données en KB avec et sans AdBlocking  </h1>
-           <div id="chart"></div>
+           <div id="chart">  <div id='dashboard'>
+
+           </div></div>
             <p align="left">Ce dashboard sert à montrer la différence entre les données consommées par les deux pages de chacun des sites en KiloBytes. Le barchart d'origine montre la somme de données consommées avec et sans le bloqueur de publicités, et le pie chart donne les statistiques générales sur cette somme pour tous les sites aussi. En passant la souris sur la barre d'un site précis, le pie chart s'y adapte automatiquement pour afficher les consommations avec bloqueur en violet, et sans le bloqueur en orange, avec les pourcentages respectifs. De même, en passant la souris sur l'une des couleurs du pie chart, le barchart s'y adapte automatiquement pour n'afficher que le type de données consommées sélectionné sur le pie chart, que ça soit les données avec ou sans bloqueur de publicités.</p>
             </article>
             </div>
             </div>
+            
+    
+            <div align="center">
+                <div class="row" >
+                <article class="col-md-12 article-intro" >
+                <h1 class="page-header"  align="left">
+               Dashboard des données consommées   
+                </h1>
+                <p align="left">Ce dashboard sert à montrer la différence entre les données consommées par les deux pages de chacun des sites en KiloBytes. Le barchart d'origine montre la somme de données consommées avec et sans le bloqueur de publicités, et le pie chart donne les statistiques générales sur cette somme pour tous les sites aussi. En passant la souris sur la barre d'un site précis, le pie chart s'y adapte automatiquement pour afficher les consommations avec bloqueur en violet, et sans le bloqueur en orange, avec les pourcentages respectifs. De même, en passant la souris sur l'une des couleurs du pie chart, le barchart s'y adapte automatiquement pour n'afficher que le type de données consommées sélectionné sur le pie chart, que ça soit les données avec ou sans bloqueur de publicités.</p>
+                </article>
+                </div>
+            </div>
+
             </div>
 </body>
 <footer>
@@ -97,127 +112,189 @@
 
 
 <script>
-    var margin = {
-             top: 20,
-             right: 20,
-             bottom: 30,
-             left: 40
-         },
-         width = 960 - margin.left - margin.right,
-         height = 500 - margin.top - margin.bottom;
-     // create the svg
-     var svg = d3.select('#chart').append("svg")
-         .attr("width", width + margin.left + margin.right)
-         .attr("height", height + margin.top + margin.bottom)
-         g = svg.append("g").attr("transform", "translate(" + margin.left + "," + 0 + ")");
-
-     // set x scale
-     var x = d3.scaleBand()
-         .rangeRound([0, width])
-         .paddingInner(0.2)
-         .align(0.1);
-
-     // set y scale
-     var y = d3.scaleLinear()
-         .rangeRound([height, 0]);
-
-     // set the colors
-     var z = d3.scaleOrdinal()
-         .range(["#98abc5", "#d0743c"]);
+    function dashboard(id, data){
+ var margin = {
+                 top: 20,
+                 right: 20,
+                 bottom: 30,
+                 left: 40
+             },
+             width = 960 - margin.left - margin.right,
+             height = 500 - margin.top - margin.bottom;
+         // create the svg
+         var svg = d3.select('#chart').append("svg")
+             .attr("width", width + margin.left + margin.right)
+             .attr("height", height + margin.top + margin.bottom)
+             g = svg.append("g").attr("transform", "translate(" + margin.left + "," + 5 + ")");
+ 
+         // set x scale
+         var x = d3.scaleBand()
+             .rangeRound([0, width])
+             .paddingInner(0.2)
+             .align(0.1);
+ 
+         // set y scale
+         var y = d3.scaleLinear()
+             .rangeRound([height, 0]);
+ 
+         // set the colors
+         var z = d3.scaleOrdinal()
+             .range(["#98abc5", "#d0743c"]);
+       
+       var tooltip = d3.select('body').append('div')
+             .attr('class', 'tooltip');
    
-   var tooltip = d3.select('#chart').append('div')
-         .attr('class', 'tooltip');
-
-     // load the csv and create the chart
-     d3.csv("data1.csv").then( function (data) {
+     data.forEach(function(d){d.total=d.values.avecAd+d.values.sansAd;});
+   
+       // function to handle histogram.
+     function histoGram(fD){
+         var keys = ['avecAd','sansAd']
+ 
+             data.sort(function (a, b) {
+                 return b.total - a.total;
+             });
+           
+             
+             x.domain(data.map(function (d) {
+                 return d.name;
+             }));
+           
+            y.domain([0, 40000]);
+             
+             z.domain(keys);
+ 
+             g.append("g")
+     .selectAll("g")
+     .data(d3.stack().keys(keys)(data))
+     .enter().append("g")
+       .attr("fill", function(d) { return z(d.key); })
+     .selectAll("rect")
+     .data(function(d) { return d; })
+     .enter().append("rect")
+       .attr("x", function(d) { return x(d.data.name); })
+       .attr("y", function(d) { return y(d[1]); })
+       .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+       .attr("width", x.bandwidth())
+        .on("mouseover",mouseover)// mouseover is defined below.
+             .on("mouseout",mouseout);
+             g.append("g")
+                 .attr("class", "axis")
+                 .attr("transform", "translate(0," + height + ")")
+                 .call(d3.axisBottom(x))
+                     .selectAll("text")
+                     .attr("transform", "translate(10,15) rotate(30)");
+ 
+             g.append("g")
+              .attr("class", "y axis")
+             .call(d3.axisLeft(y).ticks(null, "s"))
+             .append("text")
+             .attr("x", 2)
+             .attr("y", y(y.ticks().pop())+0.5)
+             .attr("dy", "0.71em")
+             .attr("fill", "#000")
+             .attr("font-weight", "bold")
+             .attr("text-anchor", "start")
+             .text("Ko");
        
-       var keys = data.columns.slice(1);
-       
-       data.forEach(function(d) {
-                     d.total = d3.sum(keys, k => +d[k])
-                     return d
-                 })
-
-         data.sort(function (a, b) {
-             return b.total - a.total;
-         });
-       
-         
-         x.domain(data.map(function (d) {
-             return d.name;
-         }));
-       
-        y.domain([0, d3.max(data, function(d) { return d.total; })]).nice();
-         
-         z.domain(keys);
-
-         g.append("g")
- .selectAll("g")
- .data(d3.stack().keys(keys)(data))
- .enter().append("g")
-   .attr("fill", function(d) { return z(d.key); })
- .selectAll("rect")
- .data(function(d) { return d; })
- .enter().append("rect")
-   .attr("x", function(d) { return x(d.data.name); })
-   .attr("y", function(d) { return y(d[1]); })
-   .attr("height", function(d) { return y(d[0]) - y(d[1]); })
-   .attr("width", x.bandwidth())
-.on("mousemove", function(d){
+       function mouseover(d){
          tooltip
-           .style("left", d3.event.pageX - 200 + "px")
-           .style("top", d3.event.pageY - 600 + "px")
-           .style("display", "inline-block")
-           .html(d[1] - d[0] + " Ko");
-             })
-                 .on("mouseout", function(d){ tooltip.style("display", "none");});
-         g.append("g")
-             .attr("class", "axis")
-             .attr("transform", "translate(0," + height + ")")
-             .call(d3.axisBottom(x))
-                 .selectAll("text")
-                 .attr("transform", "translate(10,15) rotate(30)");
-
-         g.append("g")
-          .attr("class", "y axis")
-         .call(d3.axisLeft(y).ticks(null, "s"))
-         .append("text")
-         .attr("x", 2)
-         .attr("y", y(y.ticks().pop())+0.5)
-         .attr("dy", "0.71em")
-         .attr("fill", "#000")
-         .attr("font-weight", "bold")
-         .attr("text-anchor", "start")
-         .text("Ko");
-
-         var legend = g.append("g")
-             .attr("font-family", "sans-serif")
-             .attr("font-size", 10)
-             .attr("text-anchor", "end")
-             .selectAll("g")
-             .data(keys.slice().reverse())
-             .enter().append("g")
-             .attr("transform", function (d, i) {
-                 return "translate(0," + i * 20 + ")";
-             });
-
-         legend.append("rect")
-             .attr("x", width - 19)
-             .attr("width", 19)
-             .attr("height", 19)
-             .attr("fill", z);
-
-         legend.append("text")
-             .attr("x", width - 24)
-             .attr("y", 9.5)
-             .attr("dy", "0.32em")
-             .text(function (d) {
-                 return d;
-             });
-    
-     });
-
- </script>
+               .style("left", d3.event.pageX - 20 + "px")
+               .style("top", d3.event.pageY - 50 + "px")
+               .style("display", "inline-block")
+               .html(d.data.categorie);
+         
+             var st = data.filter(function(s){ return s.name == d.data.name;})[0],
+                 nD = d3.keys(st.values).map(function(s){ return {type:s, values:st.values[s]};});            
+             // call update functions of pie-chart and legend.    
+             leg.update(nD);
+         }
+         
+         function mouseout(d){    // utility function to be called on mouseout.
+           tooltip.style("display", "none")
+             leg.update(tF);
+         }
+         
+     }
+   function legend(lD){
+         var leg = {};
+             
+         // create table for legend.
+         var legend = d3.select(id).append("table").attr('class','legend')
+         
+         // create one row per segment.
+         var tr = legend.append("tbody").selectAll("tr").data(lD).enter().append("tr");
+             
+             tr.append("td").append("svg").attr("width", '16').attr("height", '16').append("rect")
+             .attr("width", '16').attr("height", '16')
+             .attr("fill",function(d){ return z(d.type); });
+     
+         // create the second column for each segment.
+         tr.append("td").text(function(d){ if(d.type=="avecAd") return "avecAd"
+         else return "sansAd"})
+ 
+         // create the third column for each segment.
+         tr.append("td").attr("class",'legendFreq')
+             .text(function(d){ return d3.format(",")(d.values) + "Kb";})
+         
+ 
+         // create the fourth column for each segment.
+         tr.append("td").attr("class",'legendPerc')
+             .text(function(d){ return getLegend(d,lD) + "%";})
+         
+ 
+         // Utility function to be used to update the legend.
+         leg.update = function(nD){
+             // update the data attached to the row elements.
+             var l = legend.select("tbody").selectAll("tr").data(nD);
+ 
+             l.select(".legendFreq")
+              .text(function(d){ return d3.format(",")(d.values) + "Kb";})
+             
+ 
+             // update the percentage column.
+             l.select(".legendPerc").text(function(d){ return getLegend(d,nD) + "%";})
+             
+         }
+         
+         function getLegend(d,aD){ // Utility function to compute percentage.
+             return (d.values*100/d3.sum(aD.map(function(v){ return v.values; }))).toFixed(2);
+         }
+ 
+         return leg;
+     }
+     
+     var tF = ['avecAd','sansAd'].map(function(d){ 
+         return {type:d, 
+                 values: d3.sum(data.map(function(t){ return t.values[d];}))
+                }; 
+     });  
+ 
+     var hG = histoGram(data)
+         leg= legend(tF)
+ }
+     </script>
+   <script>
+  d3.json("data.json").then(function (data) {
+             var donnes = []
+             for (var i = 0; i < data["avec_ad"].length; i++) {
+                 var obj = {
+                     name: data["avec_ad"][i].name,
+                       avecAd: +data["avec_ad"][i].donnee_page_acceuil +
+                              +data["avec_ad"][i].donnee_2eme_page,
+                       sansAd: +data["sans_ad"][i].donnee_page_acceuil + 
+                              +data["sans_ad"][i].donnee_2eme_page,
+                       values: {"avecAd": +data["avec_ad"][i].donnee_page_acceuil +
+                              +data["avec_ad"][i].donnee_2eme_page,
+                              "sansAd": +data["sans_ad"][i].donnee_page_acceuil + 
+                              +data["sans_ad"][i].donnee_2eme_page},
+                       categorie: data["avec_ad"][i].categorie
+                 }
+                 donnes.push(obj)
+             }
+ 
+ dashboard('#dashboard',donnes);
+  })
+  </script>
 <!-- jQuery -->
 <script src="js/jquery-1.11.3.min.js"></script>
 
@@ -233,3 +310,6 @@
 </body>
 
 </html>
+
+
+
