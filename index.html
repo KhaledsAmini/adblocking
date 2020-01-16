@@ -1,190 +1,235 @@
 <!DOCTYPE html>
 
+<html>
 <head>
     <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags must come first in the head; any other head content must come after these tags -->
+
+    <title>Projet Dataviz 2019/2020</title>
+    
+    <!-- Bootstrap Core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Custom CSS: You can use this stylesheet to override any Bootstrap styles and/or apply your own styles -->
+    <link href="css/custom.css" rel="stylesheet">
+    <meta charset="utf-8">
     <script src="https://d3js.org/d3.v5.min.js"></script>
-    <style>
-        body {
-            width: 1060px;
-        }
-
-        path {
-            stroke: #fff;
-        }
-
-        path:hover {
-            opacity: 0.9;
-        }
-
-        .axis {
-            font: 10px sans-serif;
-        }
-
-        .axis path,
-        .axis line {
-            fill: none;
-            stroke: #000;
-            shape-rendering: crispEdges;
-        }
-
-        .x.axis path {
-            display: none;
-        }
-      	
-      	 .hidden {
-            display: none;
-        }
-          div.tooltip {
-            color: #000;
-            background-color: #fffde0;
-            padding: .5em;
-            text-shadow: #f5f5f5 0 1px 0;
-            border-radius: 2px;
-            opacity: 0.9;
-            position: absolute;
-            font-size: 13px;
-        }
-
-        .legend {
-            position: absolute;
-            display: block;
-            border-collapse: collapse;
-            border-spacing: 0px;
-        }
-
-        h3 {
-            display: inline;
-            margin: 10px 100px 10px 10px;
-            font-family: 'Arial';
-        }
-    </style>
 </head>
-<div align="center" style="margin-top: 10px;">
-    <h3>Consommation de données en KB avec et sans AdBlocking</h3>
 
-</div>
 
 <body>
-    <script>
-       var margin = {
-                top: 20,
-                right: 20,
-                bottom: 30,
-                left: 40
-            },
-            width = 960 - margin.left - margin.right,
-            height = 500 - margin.top - margin.bottom;
-        // create the svg
-        var svg = d3.select('body').append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            g = svg.append("g").attr("transform", "translate(" + margin.left + "," + 0 + ")");
+   
+    <!-- Navigation -->
+    <nav class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+        <div class="container">
+        <!-- Logo and responsive toggle -->
+        <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="#">
+        <span class="glyphicon glyphicon-fire"></span>
+        Dataviz Group 15
+        </a>
+        </div>
+        <!-- Navbar links -->
+        <div class="collapse navbar-collapse" id="navbar">
+        <ul class="nav navbar-nav">
+        <li>
+        <a href="https://lyondataviz.github.io/teaching/lyon1-m2/2019/">Cours</a>
+        </li>
+        <li>
+        <a href="https://github.com/KhaledsAmini/adblocking">Git</a>
+        </li>
+        <li>
+            <a href="https://github.com/KhaledsAmini/adblocking/wiki">Wiki</a>
+            </li>
+        <!-- /.navbar-collapse -->
+        </ul></div>
+        <!-- /.container -->
+        </div></nav>
+        
+        <div class="jumbotron feature">
+        <div class="container">
+        <h1><span class="glyphicon glyphicon-equalizer"></span> Consommation de données avec/sans bloqueur de publicités</h1>
+        </div>
+        </div>
+          <!-- Content -->
+    <div class="container">
+    
+        <!-- Heading -->
+        <div class="row">
+        <div class="col-lg-12">
+        <h1 class="page-header">Contexte du projet
+        </h1>
+            <p> Ce projet vise à mettre en exergue l'effet du bloqueur de publicités sur les données consommées, ainsi qu'en terme de temps de chargement sur les 30 sites web les plus fréquentés. Cet effet sera mis en exergue par différentes visualisations basées sur D3JS, en utilisant les données de consommation de deux pages (en KiloBytes) web différentes de chacun des sites, ainsi que leurs temps de chargement respectifs. Tout cela a été fait de deux façons différents afin de réaliser la comparaison, la première fois en utilisant le bloqueur de publicités et en le désactivant la deuxième fois. Ces données ont été collectées manuellement par les membres du groupe vu le manque de données nécessaires. </p>
+        </div>
+        </div>
 
-        // set x scale
-        var x = d3.scaleBand()
-            .rangeRound([0, width])
-            .paddingInner(0.2)
-            .align(0.1);
-
-        // set y scale
-        var y = d3.scaleLinear()
-            .rangeRound([height, 0]);
-
-        // set the colors
-        var z = d3.scaleOrdinal()
-            .range(["#98abc5", "#d0743c"]);
-      
-      var tooltip = d3.select('body').append('div')
-            .attr('class', 'hidden tooltip');
-
-        // load the csv and create the chart
-        d3.csv("data1.csv").then( function (data) {
-          
-          var keys = data.columns.slice(1);
-          
-          data.forEach(function(d) {
-						d.total = d3.sum(keys, k => +d[k])
-						return d
-					})
-
-            data.sort(function (a, b) {
-                return b.total - a.total;
-            });
-          
-            
-            x.domain(data.map(function (d) {
-                return d.name;
-            }));
-          
-           y.domain([0, d3.max(data, function(d) { return d.total; })]).nice();
-            
-            z.domain(keys);
-
-            g.append("g")
-    .selectAll("g")
-    .data(d3.stack().keys(keys)(data))
-    .enter().append("g")
-      .attr("fill", function(d) { return z(d.key); })
-    .selectAll("rect")
-    .data(function(d) { return d; })
-    .enter().append("rect")
-      .attr("x", function(d) { return x(d.data.name); })
-      .attr("y", function(d) { return y(d[1]); })
-      .attr("height", function(d) { return y(d[0]) - y(d[1]); })
-      .attr("width", x.bandwidth())
-.on("mousemove", function(d){
-            tooltip
-              .style("left", d3.event.pageX - 20 + "px")
-              .style("top", d3.event.pageY - 50 + "px")
-              .style("display", "inline-block")
-              .html(d[1] - d[0] + " Ko");
-        		})
-    				.on("mouseout", function(d){ tooltip.style("display", "none");});
-            g.append("g")
-                .attr("class", "axis")
-                .attr("transform", "translate(0," + height + ")")
-                .call(d3.axisBottom(x))
-            		.selectAll("text")
-            		.attr("transform", "translate(10,15) rotate(30)");
-
-            g.append("g")
-             .attr("class", "y axis")
-            .call(d3.axisLeft(y).ticks(null, "s"))
-            .append("text")
-            .attr("x", 2)
-            .attr("y", y(y.ticks().pop())+0.5)
-            .attr("dy", "0.71em")
-            .attr("fill", "#000")
-            .attr("font-weight", "bold")
-            .attr("text-anchor", "start")
-            .text("Ko");
-
-            var legend = g.append("g")
-                .attr("font-family", "sans-serif")
-                .attr("font-size", 10)
-                .attr("text-anchor", "end")
-                .selectAll("g")
-                .data(keys.slice().reverse())
-                .enter().append("g")
-                .attr("transform", function (d, i) {
-                    return "translate(0," + i * 20 + ")";
-                });
-
-            legend.append("rect")
-                .attr("x", width - 19)
-                .attr("width", 19)
-                .attr("height", 19)
-                .attr("fill", z);
-
-            legend.append("text")
-                .attr("x", width - 24)
-                .attr("y", 9.5)
-                .attr("dy", "0.32em")
-                .text(function (d) {
-                    return d;
-                });
-       
-        });
-
-    </script>
+        <div align="center">
+            <div class="row" >
+            <article class="col-md-12 article-intro"  >
+           
+            <h1 class="page-header"  align="left">
+                Consommation de données en KB avec et sans AdBlocking  </h1>
+           <div id="chart"></div>
+            <p align="left">Ce dashboard sert à montrer la différence entre les données consommées par les deux pages de chacun des sites en KiloBytes. Le barchart d'origine montre la somme de données consommées avec et sans le bloqueur de publicités, et le pie chart donne les statistiques générales sur cette somme pour tous les sites aussi. En passant la souris sur la barre d'un site précis, le pie chart s'y adapte automatiquement pour afficher les consommations avec bloqueur en violet, et sans le bloqueur en orange, avec les pourcentages respectifs. De même, en passant la souris sur l'une des couleurs du pie chart, le barchart s'y adapte automatiquement pour n'afficher que le type de données consommées sélectionné sur le pie chart, que ça soit les données avec ou sans bloqueur de publicités.</p>
+            </article>
+            </div>
+            </div>
+            </div>
 </body>
+<footer>
+    <div class="footer-blurb">
+        <div class="container">
+           <h5> Université Claude Bernard Lyon 1 - Dataviz 2019/2020 <b>Encadrant</b>: Aurelien Tabard <h5>
+            <br>	
+            Master 2 Data Science - Khaled Sakka Amini, Abdelhamid Gaddari, Linh Nguyen, Gaultier Parain
+        </div>
+    </div>
+    
+</footer>
+
+
+<script>
+    var margin = {
+             top: 20,
+             right: 20,
+             bottom: 30,
+             left: 40
+         },
+         width = 960 - margin.left - margin.right,
+         height = 500 - margin.top - margin.bottom;
+     // create the svg
+     var svg = d3.select('#chart').append("svg")
+         .attr("width", width + margin.left + margin.right)
+         .attr("height", height + margin.top + margin.bottom)
+         g = svg.append("g").attr("transform", "translate(" + margin.left + "," + 0 + ")");
+
+     // set x scale
+     var x = d3.scaleBand()
+         .rangeRound([0, width])
+         .paddingInner(0.2)
+         .align(0.1);
+
+     // set y scale
+     var y = d3.scaleLinear()
+         .rangeRound([height, 0]);
+
+     // set the colors
+     var z = d3.scaleOrdinal()
+         .range(["#98abc5", "#d0743c"]);
+   
+   var tooltip = d3.select('#chart').append('div')
+         .attr('class', 'tooltip');
+
+     // load the csv and create the chart
+     d3.csv("data1.csv").then( function (data) {
+       
+       var keys = data.columns.slice(1);
+       
+       data.forEach(function(d) {
+                     d.total = d3.sum(keys, k => +d[k])
+                     return d
+                 })
+
+         data.sort(function (a, b) {
+             return b.total - a.total;
+         });
+       
+         
+         x.domain(data.map(function (d) {
+             return d.name;
+         }));
+       
+        y.domain([0, d3.max(data, function(d) { return d.total; })]).nice();
+         
+         z.domain(keys);
+
+         g.append("g")
+ .selectAll("g")
+ .data(d3.stack().keys(keys)(data))
+ .enter().append("g")
+   .attr("fill", function(d) { return z(d.key); })
+ .selectAll("rect")
+ .data(function(d) { return d; })
+ .enter().append("rect")
+   .attr("x", function(d) { return x(d.data.name); })
+   .attr("y", function(d) { return y(d[1]); })
+   .attr("height", function(d) { return y(d[0]) - y(d[1]); })
+   .attr("width", x.bandwidth())
+.on("mousemove", function(d){
+         tooltip
+           .style("left", d3.event.pageX - 200 + "px")
+           .style("top", d3.event.pageY - 600 + "px")
+           .style("display", "inline-block")
+           .html(d[1] - d[0] + " Ko");
+             })
+                 .on("mouseout", function(d){ tooltip.style("display", "none");});
+         g.append("g")
+             .attr("class", "axis")
+             .attr("transform", "translate(0," + height + ")")
+             .call(d3.axisBottom(x))
+                 .selectAll("text")
+                 .attr("transform", "translate(10,15) rotate(30)");
+
+         g.append("g")
+          .attr("class", "y axis")
+         .call(d3.axisLeft(y).ticks(null, "s"))
+         .append("text")
+         .attr("x", 2)
+         .attr("y", y(y.ticks().pop())+0.5)
+         .attr("dy", "0.71em")
+         .attr("fill", "#000")
+         .attr("font-weight", "bold")
+         .attr("text-anchor", "start")
+         .text("Ko");
+
+         var legend = g.append("g")
+             .attr("font-family", "sans-serif")
+             .attr("font-size", 10)
+             .attr("text-anchor", "end")
+             .selectAll("g")
+             .data(keys.slice().reverse())
+             .enter().append("g")
+             .attr("transform", function (d, i) {
+                 return "translate(0," + i * 20 + ")";
+             });
+
+         legend.append("rect")
+             .attr("x", width - 19)
+             .attr("width", 19)
+             .attr("height", 19)
+             .attr("fill", z);
+
+         legend.append("text")
+             .attr("x", width - 24)
+             .attr("y", 9.5)
+             .attr("dy", "0.32em")
+             .text(function (d) {
+                 return d;
+             });
+    
+     });
+
+ </script>
+<!-- jQuery -->
+<script src="js/jquery-1.11.3.min.js"></script>
+
+<!-- Bootstrap Core JavaScript -->
+<script src="js/bootstrap.min.js"></script>
+
+<!-- IE10 viewport bug workaround -->
+<script src="js/ie10-viewport-bug-workaround.js"></script>
+
+<!-- Placeholder Images -->
+<script src="js/holder.min.js"></script>
+
+</body>
+
+</html>
