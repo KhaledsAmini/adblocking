@@ -8,11 +8,21 @@ We have collected data on the 30 most visited websites with and without add-bloc
 
 You can view our project on https://khaledsamini.github.io/adblocking/?fbclid=IwAR2vZm_APx6PkuDeEwzOvTSLHZBJw5a1xRnncUokcHgHJt1K1GFhitHLjGk
 
+## Data
+
+The dataset contains for each website with and without add-blocker:
+
+ - Its name
+ - The data of the first and the second page
+ - The loading time of the first and the second page
+ - Its category
+
+
 ## Guidance document
 
 https://github.com/KhaledsAmini/adblocking/wiki/Document-de-cadrage
 
-## Contributors
+## Group members
 
 Gaultier Parain
 
