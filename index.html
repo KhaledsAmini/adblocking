@@ -219,9 +219,9 @@
             .on("mousemove", function (d) {
                 var mousePosition = d3.mouse(this);
                 tooltip
-                    .attr('style', 'left:' + (mousePosition[0] + 15) +
+                    .attr('style', 'left:' + (mousePosition[0] - 50) +
                                 'px; top:' + (mousePosition[1] - 35) + 'px')
-                    .html(d.rate + ": " + d.value + " s");
+                    .html(d.rate + ": " + d.value.toFixed(2) + " s");
             })
             .on("mouseout", function (d) { tooltip.style("display", "none"); });
 
