@@ -91,7 +91,7 @@
 
                     <h1 class="page-header" align="left">
                         Consommation de données en KB avec et sans AdBlocking </h1>
-                    <div id="chart">
+                    <div id="chart1">
                     
                         <div id='dashboard1'>
 
@@ -112,6 +112,11 @@
                     <h1 class="page-header" align="left">
                         Temps de chargement avec et sans AdBlocking
                     </h1>
+                    <div id="chart2">
+                    
+                        <div id='dashboard2'>
+
+                    </div>
                     <p align="left">Ce graphique montre les temps de chargement avec et sans
                         bloqueur de publicités. La catégorie du site ainsi que les valeurs des temps de chargement s'affichent lorsque l'on passe la souris sur la barre correspondante.</p>
                 </article>
@@ -143,7 +148,7 @@
             width = 960 - margin.left - margin.right,
             height = 500 - margin.top - margin.bottom;
         // create the svg
-        var svg = d3.select('#chart').append("svg")
+        var svg = d3.select('#chart1').append("svg")
             .attr("width", width + margin.left + margin.right)
             .attr("height", height + margin.top + margin.bottom)
         g = svg.append("g").attr("transform", "translate(" + margin.left + "," + 5 + ")");
@@ -296,6 +301,170 @@
         var hG = histoGram(data)
         leg = legend(tF)
     }
+    
+    function dashboard2(id, data) {
+        var margin = {
+            top: 20,
+            right: 20,
+            bottom: 30,
+            left: 40
+        },
+            width = 960 - margin.left - margin.right,
+            height = 500 - margin.top - margin.bottom;
+        // create the svg
+        var svg = d3.select('#chart2').append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+        g = svg.append("g").attr("transform", "translate(" + margin.left + "," + 5 + ")");
+
+        // set x scale
+        var x = d3.scaleBand()
+            .rangeRound([0, width])
+            .paddingInner(0.2)
+            .align(0.1);
+
+        // set y scale
+        var y = d3.scaleLinear()
+            .rangeRound([height, 0]);
+
+        // set the colors
+        var z = d3.scaleOrdinal()
+            .range(["#98abc5", "#d0743c"]);
+
+        var tooltip = d3.select('body').append('div')
+            .attr('class', 'tooltip');
+
+        data.forEach(function (d) { d.total = d.values.avecAd + d.values.sansAd; });
+
+        // function to handle histogram.
+        function histoGram(fD) {
+            var keys = ['avecAd', 'sansAd']
+
+            data.sort(function (a, b) {
+                return b.total - a.total;
+            });
+
+
+            x.domain(data.map(function (d) {
+                return d.name;
+            }));
+
+            y.domain([0, 40000]);
+
+            z.domain(keys);
+
+            g.append("g")
+                .selectAll("g")
+                .data(d3.stack().keys(keys)(data))
+                .enter().append("g")
+                .attr("fill", function (d) { return z(d.key); })
+                .selectAll("rect")
+                .data(function (d) { return d; })
+                .enter().append("rect")
+                .attr("x", function (d) { return x(d.data.name); })
+                .attr("y", function (d) { return y(d[1]); })
+                .attr("height", function (d) { return y(d[0]) - y(d[1]); })
+                .attr("width", x.bandwidth())
+                .on("mouseover", mouseover)// mouseover is defined below.
+                .on("mouseout", mouseout);
+            g.append("g")
+                .attr("class", "axis")
+                .attr("transform", "translate(0," + height + ")")
+                .call(d3.axisBottom(x))
+                .selectAll("text")
+                .attr("transform", "translate(10,15) rotate(30)");
+
+            g.append("g")
+                .attr("class", "y axis")
+                .call(d3.axisLeft(y).ticks(null, "s"))
+                .append("text")
+                .attr("x", 2)
+                .attr("y", y(y.ticks().pop()) + 0.5)
+                .attr("dy", "0.71em")
+                .attr("fill", "#000")
+                .attr("font-weight", "bold")
+                .attr("text-anchor", "start")
+                .text("Ko");
+
+            function mouseover(d) {
+                tooltip
+                    .style("left", d3.event.pageX - 20 + "px")
+                    .style("top", d3.event.pageY - 50 + "px")
+                    .style("display", "inline-block")
+                    .html(d.data.categorie);
+
+                var st = data.filter(function (s) { return s.name == d.data.name; })[0],
+                    nD = d3.keys(st.values).map(function (s) { return { type: s, values: st.values[s] }; });
+                // call update functions of pie-chart and legend.    
+                leg.update(nD);
+            }
+
+            function mouseout(d) {    // utility function to be called on mouseout.
+                tooltip.style("display", "none")
+                leg.update(tF);
+            }
+
+        }
+        function legend(lD) {
+            var leg = {};
+
+            // create table for legend.
+            var legend = d3.select(id).append("table").attr('class', 'legend')
+
+            // create one row per segment.
+            var tr = legend.append("tbody").selectAll("tr").data(lD).enter().append("tr");
+
+            tr.append("td").append("svg").attr("width", '16').attr("height", '16').append("rect")
+                .attr("width", '16').attr("height", '16')
+                .attr("fill", function (d) { return z(d.type); });
+
+            // create the second column for each segment.
+            tr.append("td").text(function (d) {
+                if (d.type == "avecAd") return "avecAd"
+                else return "sansAd"
+            })
+
+            // create the third column for each segment.
+            tr.append("td").attr("class", 'legendFreq')
+                .text(function (d) { return d3.format(",")(d.values) + "s"; })
+
+
+            // create the fourth column for each segment.
+            tr.append("td").attr("class", 'legendPerc')
+                .text(function (d) { return getLegend(d, lD) + "%"; })
+
+
+            // Utility function to be used to update the legend.
+            leg.update = function (nD) {
+                // update the data attached to the row elements.
+                var l = legend.select("tbody").selectAll("tr").data(nD);
+
+                l.select(".legendFreq")
+                    .text(function (d) { return d3.format(",")(d.values) + "s"; })
+
+
+                // update the percentage column.
+                l.select(".legendPerc").text(function (d) { return getLegend(d, nD) + "%"; })
+
+            }
+
+            function getLegend(d, aD) { // Utility function to compute percentage.
+                return (d.values * 100 / d3.sum(aD.map(function (v) { return v.values; }))).toFixed(2);
+            }
+
+            return leg;
+        }
+
+        var tF = ['avecAd', 'sansAd'].map(function (d) {
+            return {
+                type: d,
+                values: d3.sum(data.map(function (t) { return t.values[d]; }))
+            };
+        });
+
+        var hG = histoGram(data)
+        leg = legend(tF)
+    }
 </script>
 <script>
     d3.json("data.json").then(function (data) {
@@ -319,6 +488,28 @@
         }
 
         dashboard1('#dashboard1', donnes);
+    })
+    d3.json("data.json").then(function (data) {
+        var donnes = []
+        for (var i = 0; i < data["avec_ad"].length; i++) {
+            var obj = {
+                name: data["avec_ad"][i].name,
+                avecAd: +data["avec_ad"][i].temps_page_acceuil +
+                    +data["avec_ad"][i].temps_2eme_page,
+                sansAd: +data["sans_ad"][i].temps_page_acceuil +
+                    +data["sans_ad"][i].temps_2eme_page,
+                values: {
+                    "avecAd": +data["avec_ad"][i].temps_page_acceuil +
+                        +data["avec_ad"][i].temps_2eme_page,
+                    "sansAd": +data["sans_ad"][i].temps_page_acceuil +
+                        +data["sans_ad"][i].temps_2eme_page
+                },
+                categorie: data["avec_ad"][i].categorie
+            }
+            donnes.push(obj)
+        }
+
+        dashboard2('#dashboard2', donnes);
     })
 </script>
 <!-- jQuery -->
